@@ -18,7 +18,22 @@ describe('App', () => {
     render(<App url="/contact" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('csrf_token')).toHaveValue('randomToken');
+      expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
+    });
+  });
+
+  it('displays error message', async () => {
+    server.use(
+      http.get('/contact', () => {
+        return new HttpResponse.json(null, { status: 500 });
+      }),
+    );
+
+    render(<App url="/contact" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('error-message'))
+        .toHaveTextContent('Unable to load contact form');
     });
   });
 });

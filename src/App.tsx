@@ -4,6 +4,7 @@ import './App.css'
 function App({ url }: { url: String }) {
 
   const [csrfToken, setCsrfToken] = useState('');
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     /*
@@ -20,19 +21,25 @@ function App({ url }: { url: String }) {
         setCsrfToken(data.token);
       })
       .catch(error => {
-        console.error(error);
+        setError(true);
       });
   }, []);
+
+  const errorMessage = (
+    <p data-testid="error-message">Unable to load contact form</p>
+  );
 
   return (
     <>
       <form>
         <input
-          data-testid="csrf_token"
+          data-testid="csrf-token"
           name="csrf_token"
           type="hidden"
           value={csrfToken}
         />
+        {error && errorMessage}
+        <button>Submit</button>
       </form>
     </>
   )
