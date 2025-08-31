@@ -62,10 +62,20 @@ function App({ url }: { url: String }) {
   }
 
   const errorMessage = (
-    <p data-testid="error-message">Unable to load contact form</p>
+    <p
+      data-testid="error-message"
+      id="contact-form-error-message"
+    >
+      Unable to load contact form
+    </p>
   );
   const successMessage = (
-    <p data-testid="success-message">Form submitted successfully</p>
+    <p
+      data-testid="success-message"
+      id="contact-form-success-message"
+    >
+      Form submitted successfully
+    </p>
   );
 
   return (
