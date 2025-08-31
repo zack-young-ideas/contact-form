@@ -1,1 +1,52 @@
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
 
+input, textarea {
+  display: block;
+  margin: 1rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  border: 1px solid rgb(222, 226, 230);
+  border-radius: 0.375rem;
+  width: 100%;
+  max-width: 32rem;
+}
+
+button {
+  display: inline-block;
+  margin: 1rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: white;
+  text-align: center;
+  border: 1px solid rgb(57, 155, 198);
+  border-radius: 0.375rem;
+  background-color: rgb(57, 155, 198);
+  -webkit-transition: background-color 0.15s linear;
+  -ms-transition: background-color 0.15s linear;
+  transition: background-color 0.15s linear,
+    border-color 0.15s linear;
+}
+
+button:hover {
+  cursor: pointer;
+  background-color: rgb(46, 125, 159);
+  border-color: rgb(46, 125, 159);
+}
+
+#contact-form-error-message {
+  color: rgb(220, 53, 69);
+  margin: 1rem;
+  font-weight: 500;
+}
+
+#contact-form-success-message {
+  color: rgb(13, 110, 253);
+  margin: 1rem;
+  font-weight: 500;
+}
