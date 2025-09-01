@@ -8,8 +8,20 @@ const server = setupServer(
     return HttpResponse.json({ token: 'randomToken' });
   }),
 
-  http.post('/contact', () => {
-    return HttpResponse.json({ message: 'Success' });
+  http.post('/contact', async ({ request }) => {
+    const data = await request.json();
+    const firstName = data.firstName;
+    const lastName = data.lastName;
+    const email = data.email;
+    const phone = data.phone;
+    const message = data.message;
+    const csrfToken = data.csrfToken;
+
+    if (!(firstName && lastName && email && phone && message && csrfToken)) {
+      return HttpResponse.json({ message: 'Invalid data' }, { status: 400 });
+    }
+
+    return HttpResponse.json({ message: 'Success' }, { status: 200 });
   }),
 );
 
@@ -26,10 +38,10 @@ describe('App', () => {
     });
   });
 
-  it('displays error message if CSRF token is unavailable', async () => {
+  it('displays error message if CSRF token fails', async () => {
     server.use(
       http.get('/contact', () => {
-        return new HttpResponse.json(null, { status: 500 });
+        return HttpResponse.json(null, { status: 500 });
       }),
     );
 
@@ -41,8 +53,21 @@ describe('App', () => {
     });
   });
 
+  it('times out if CSRF token is unavailable', async () => {
+    render(<App url="/unavailable" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('error-message'))
+        .toHaveTextContent('Unable to load contact form');
+    });
+  });
+
   it('submits form data', async () => {
     render(<App url="/contact" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
+    });
 
     const firstNameField = await screen.getByTestId('first-name');
     const lastNameField = await screen.getByTestId('last-name');
@@ -69,11 +94,19 @@ describe('App', () => {
   it('displays error message if POST request fails', async () => {
     server.use(
       http.post('/contact', () => {
-        return new HttpResponse.json(null, { status: 500 });
+        return HttpResponse.json({
+          message: 'Invalid email address'
+        }, {
+          status: 500
+        });
       }),
     );
 
     render(<App url="/contact" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
+    });
 
     const firstNameField = await screen.getByTestId('first-name');
     const lastNameField = await screen.getByTestId('last-name');
@@ -93,7 +126,7 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('error-message'))
-        .toHaveTextContent('Unable to load contact form');
+        .toHaveTextContent('Invalid email address');
     });
   });
 });
