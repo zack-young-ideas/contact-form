@@ -4,6 +4,7 @@ import './App.css'
 function App({ url }: { url: String }) {
 
   const [csrfToken, setCsrfToken] = useState('');
+  const [csrfSecret, setCsrfSecret] = useState('');
   const [spinner, setSpinner] = useState(true);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -19,10 +20,15 @@ function App({ url }: { url: String }) {
     /*
     Retrieves a CSRF token upon loading the contact form.
     */
-    fetch(url)
+    fetch(url, { credentials: 'same-origin' })
       .then(response => {
         if (!response.ok) {
           throw new Error('Unable to retrieve CSRF token');
+        }
+        const headers = response.headers;
+        const csrfSecret = headers.get('X-CSRF-Token');
+        if (csrfSecret) {
+          setCsrfSecret(csrfSecret);
         }
         return response.json();
       })
@@ -47,12 +53,16 @@ function App({ url }: { url: String }) {
   const submitForm = async (event) => {
     event.preventDefault();
     try {
+      let headers = {
+        'Content-Type': 'application/json',
+      }
+      if (csrfSecret) {
+        headers['X-CSRF-Token'] = csrfSecret;
+      }
       formData.csrfToken = csrfToken;
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: JSON.stringify(formData),
       });
 
