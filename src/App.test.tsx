@@ -5,10 +5,16 @@ import App from './App';
 
 const server = setupServer(
   http.get('/contact', () => {
-    return HttpResponse.json({ token: 'randomToken' });
+    return HttpResponse.json({ token: 'randomToken' }, {
+      headers: {
+        'Set-Cookie': 'csrftoken=secret',
+        'X-CSRF-Token': 'secret',
+      },
+      status: 200,
+    });
   }),
 
-  http.post('/contact', async ({ request }) => {
+  http.post('/contact', async ({ cookies, request }) => {
     const data = await request.json();
     const firstName = data.firstName;
     const lastName = data.lastName;
@@ -16,9 +22,17 @@ const server = setupServer(
     const phone = data.phone;
     const message = data.message;
     const csrfToken = data.csrfToken;
-
     if (!(firstName && lastName && email && phone && message && csrfToken)) {
       return HttpResponse.json({ message: 'Invalid data' }, { status: 400 });
+    }
+
+    const csrfTokenHeader = request.headers.get('X-CSRF-Token');
+    if (csrfTokenHeader !== 'secret') {
+      return HttpResponse.json({ message: 'Invalid header' }, { status: 400 });
+    }
+
+    if (cookies.csrftoken !== 'secret') {
+      return HttpResponse.json({ message: 'Invalid header' }, { status: 400 });
     }
 
     return HttpResponse.json({ message: 'Success' }, { status: 200 });
