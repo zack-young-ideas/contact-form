@@ -5,6 +5,10 @@ import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App url={`${import.meta.env.VITE_SERVER_HOSTNAME}/contact`}/>
+    <App
+      csrfHeaderName="X-CSRF-Token"
+      csrfFieldName={null}
+      url={`${import.meta.env.VITE_SERVER_HOSTNAME}/contact`}
+    />
   </StrictMode>,
 )
