@@ -1,10 +1,24 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
-function App({ url }: { url: String }) {
+function App({
+  url,
+  csrfHeaderName=null,
+  csrfFieldName=null,
+}: {
+  url: String,
+  csrfHeaderName: String | null,
+  csrfFieldName: String | null,
+}) {
+
+  if (!csrfHeaderName && !csrfFieldName) {
+    throw new Error(
+      'Must provide at value for either csrfHeaderName or csrfFieldName; '
+      + 'cannot both be null'
+    );
+  }
 
   const [csrfToken, setCsrfToken] = useState('');
-  const [csrfSecret, setCsrfSecret] = useState('');
   const [spinner, setSpinner] = useState(true);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -20,26 +34,46 @@ function App({ url }: { url: String }) {
     /*
     Retrieves a CSRF token upon loading the contact form.
     */
-    fetch(url, { credentials: 'same-origin' })
-      .then(response => {
+    const retrieveCsrfToken = async () => {
+      try {
+        const response = await fetch(url, { credentials: 'same-origin' });
         if (!response.ok) {
-          throw new Error('Unable to retrieve CSRF token');
+          setError('Unable to load contact form');
+          setSpinner(false);
+          return;
         }
-        const headers = response.headers;
-        const csrfSecret = headers.get('X-CSRF-Token');
-        if (csrfSecret) {
-          setCsrfSecret(csrfSecret);
+        if (csrfHeaderName) {
+          const headers = response.headers;
+          const csrfTokenValue = headers.get('X-CSRF-Token');
+          if (!csrfTokenValue) {
+            setError('Unable to load contact form');
+            setSpinner(false);
+          } else {
+            setCsrfToken(csrfTokenValue);
+            setSpinner(false);
+          }
+          return;
         }
-        return response.json();
-      })
-      .then(data => {
-        setCsrfToken(data.token);
-        setSpinner(false);
-      })
-      .catch(error => {
+        if (csrfFieldName) {
+          const data = await response.json();
+          const csrfTokenValue = data[csrfFieldName];
+          if (!csrfTokenValue && (csrfToken.length === 0)) {
+            setError('Unable to load contact form');
+            setSpinner(false);
+          } else {
+            setCsrfToken(csrfTokenValue);
+            setSpinner(false);
+          }
+          return;
+        }
         setError('Unable to load contact form');
         setSpinner(false);
-      });
+      } catch {
+        setError('Unable to load contact form');
+        setSpinner(false);
+      }
+    }
+    retrieveCsrfToken();
   }, []);
 
   const handleChange = (event) => {
@@ -56,8 +90,8 @@ function App({ url }: { url: String }) {
       let headers = {
         'Content-Type': 'application/json',
       }
-      if (csrfSecret) {
-        headers['X-CSRF-Token'] = csrfSecret;
+      if (csrfHeaderName) {
+        headers[csrfHeaderName] = csrfToken;
       }
       formData.csrfToken = csrfToken;
       const response = await fetch(url, {

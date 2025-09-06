@@ -2,41 +2,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import App from './App';
+import { headerCsrfResponse, bodyCsrfResponse } from './mockServer';
 
 const server = setupServer(
-  http.get('/contact', () => {
-    return HttpResponse.json({ token: 'randomToken' }, {
-      headers: {
-        'Set-Cookie': 'csrftoken=secret',
-        'X-CSRF-Token': 'secret',
-      },
-      status: 200,
-    });
-  }),
-
-  http.post('/contact', async ({ cookies, request }) => {
-    const data = await request.json();
-    const firstName = data.firstName;
-    const lastName = data.lastName;
-    const email = data.email;
-    const phone = data.phone;
-    const message = data.message;
-    const csrfToken = data.csrfToken;
-    if (!(firstName && lastName && email && phone && message && csrfToken)) {
-      return HttpResponse.json({ message: 'Invalid data' }, { status: 400 });
-    }
-
-    const csrfTokenHeader = request.headers.get('X-CSRF-Token');
-    if (csrfTokenHeader !== 'secret') {
-      return HttpResponse.json({ message: 'Invalid header' }, { status: 400 });
-    }
-
-    if (cookies.csrftoken !== 'secret') {
-      return HttpResponse.json({ message: 'Invalid header' }, { status: 400 });
-    }
-
-    return HttpResponse.json({ message: 'Success' }, { status: 200 });
-  }),
+  headerCsrfResponse.get,
+  headerCsrfResponse.post,
 );
 
 beforeAll(() => server.listen());
@@ -45,7 +15,17 @@ afterAll(() => server.close());
 
 describe('App', () => {
   it('retrieves CSRF token upon loading', async () => {
-    render(<App url="/contact" />);
+    render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
+    });
+  });
+
+  it('can retrieve CSRF token from response body', async () => {
+    server.use(bodyCsrfResponse.get);
+
+    render(<App url="/contact" csrfFieldName="token" />);
 
     await waitFor(() => {
       expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
@@ -59,7 +39,7 @@ describe('App', () => {
       }),
     );
 
-    render(<App url="/contact" />);
+    render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
 
     await waitFor(() => {
       expect(screen.getByTestId('error-message'))
@@ -68,7 +48,7 @@ describe('App', () => {
   });
 
   it('times out if CSRF token is unavailable', async () => {
-    render(<App url="/unavailable" />);
+    render(<App url="/unavailable" csrfHeaderName="X-CSRF-Token" />);
 
     await waitFor(() => {
       expect(screen.getByTestId('error-message'))
@@ -76,8 +56,17 @@ describe('App', () => {
     });
   });
 
+  it('uses header if csrfHeaderName and csrfFieldName are set', async () => {
+    render(<App
+      url="/contact"
+      csrfHeaderName="X-CSRF-Token"
+      csrfFieldName="token"
+    />);
+
+  });
+
   it('submits form data', async () => {
-    render(<App url="/contact" />);
+    render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
 
     await waitFor(() => {
       expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
@@ -116,7 +105,7 @@ describe('App', () => {
       }),
     );
 
-    render(<App url="/contact" />);
+    render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
 
     await waitFor(() => {
       expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
