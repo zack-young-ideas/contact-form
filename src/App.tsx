@@ -90,10 +90,13 @@ function App({
       let headers = {
         'Content-Type': 'application/json',
       }
-      if (csrfHeaderName) {
-        headers[csrfHeaderName] = csrfToken;
+      if (csrfFieldName) {
+        formData[csrfFieldName] = csrfToken;
+      } else {
+        if (csrfHeaderName) {
+          headers[csrfHeaderName] = csrfToken;
+        }
       }
-      formData.csrfToken = csrfToken;
       const response = await fetch(url, {
         method: 'POST',
         headers: headers,
@@ -124,7 +127,7 @@ function App({
     hiddenFormField = (
       <input
         data-testid="csrf-token"
-        name="csrfToken"
+        name={csrfFieldName}
         type="hidden"
         value={csrfToken}
       />

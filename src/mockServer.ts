@@ -74,7 +74,7 @@ const bodyCsrfResponse = {
     const mock = http.post('/contact', async ({ cookies, request }) => {
       const data = await request.json();
       if (!(data.firstName && data.lastName && data.email && data.phone
-            && data.message && data.csrfToken)) {
+            && data.message && data.token)) {
         return HttpResponse.json({
           message: 'Invalid data'
         }, {
@@ -82,7 +82,7 @@ const bodyCsrfResponse = {
         });
       }
 
-      if (data.csrfToken !== 'randomToken') {
+      if (data.token !== 'randomToken') {
         return HttpResponse.json({
           message: 'Invalid header'
         }, {
