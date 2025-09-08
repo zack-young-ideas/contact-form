@@ -5,8 +5,8 @@ import App from './App';
 import { headerCsrfResponse, bodyCsrfResponse } from './mockServer';
 
 const server = setupServer(
-  headerCsrfResponse.get,
-  headerCsrfResponse.post,
+  headerCsrfResponse.get('X-CSRF-Token'),
+  headerCsrfResponse.post('X-CSRF-Token'),
 );
 
 beforeAll(() => server.listen());
@@ -18,17 +18,17 @@ describe('App', () => {
     render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
+      expect(screen.getByTestId('first-name')).toBeInTheDocument();
     });
   });
 
   it('can retrieve CSRF token from response body', async () => {
-    server.use(bodyCsrfResponse.get);
+    server.use(bodyCsrfResponse.get('token'));
 
     render(<App url="/contact" csrfFieldName="token" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
+      expect(screen.getByTestId('first-name')).toBeInTheDocument();
     });
   });
 
@@ -63,13 +63,16 @@ describe('App', () => {
       csrfFieldName="token"
     />);
 
+    await waitFor(() => {
+      expect(screen.queryByTestId('csrf-token')).not.toBeInTheDocument();
+    });
   });
 
   it('submits form data', async () => {
     render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
+      expect(screen.getByTestId('first-name')).toBeInTheDocument();
     });
 
     const firstNameField = await screen.getByTestId('first-name');
@@ -108,7 +111,7 @@ describe('App', () => {
     render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
+      expect(screen.getByTestId('first-name')).toBeInTheDocument();
     });
 
     const firstNameField = await screen.getByTestId('first-name');
@@ -130,6 +133,38 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByTestId('error-message'))
         .toHaveTextContent('Invalid email address');
+    });
+  });
+
+  it('can submit CSRF token in request body', async () => {
+    server.use(bodyCsrfResponse.get('token'));
+    server.use(bodyCsrfResponse.post('token'));
+
+    render(<App url="/contact" csrfFieldName="token" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');
+    });
+
+    const firstNameField = await screen.getByTestId('first-name');
+    const lastNameField = await screen.getByTestId('last-name');
+    const emailField = await screen.getByTestId('email-address');
+    const phoneField = await screen.getByTestId('phone-number');
+    const messageField = await screen.getByTestId('message');
+    const submitButton = await screen.getByRole('button', { name: 'Submit' });
+
+    fireEvent.change(firstNameField, { target: { value: 'John' } });
+    fireEvent.change(lastNameField, { target: { value: 'Smith' } });
+    fireEvent.change(emailField, { target: { value: 'jsmith@example.com' } });
+    fireEvent.change(phoneField, { target: { value: '1234567890' } });
+    fireEvent.change(
+      messageField, { target: { value: 'I would love to hear from you.' } }
+    );
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('success-message'))
+        .toHaveTextContent('Form submitted successfully');
     });
   });
 });

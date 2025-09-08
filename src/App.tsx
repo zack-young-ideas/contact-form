@@ -119,6 +119,18 @@ function App({
     </p>
   );
 
+  let hiddenFormField = null;
+  if (csrfFieldName && !csrfHeaderName) {
+    hiddenFormField = (
+      <input
+        data-testid="csrf-token"
+        name="csrfToken"
+        type="hidden"
+        value={csrfToken}
+      />
+    );
+  }
+
   let content;
   if (success) {
     content = (
@@ -176,12 +188,7 @@ function App({
             placeholder="Message"
             value={formData.message}
           ></textarea>
-          <input
-            data-testid="csrf-token"
-            name="csrfToken"
-            type="hidden"
-            value={csrfToken}
-          />
+          {hiddenFormField}
           {error && errorContent}
           <button type="submit">Submit</button>
         </form>
