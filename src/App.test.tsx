@@ -15,7 +15,11 @@ afterAll(() => server.close());
 
 describe('App', () => {
   it('retrieves CSRF token upon loading', async () => {
-    render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
+    render(<App
+      csrfUrl="/csrf"
+      submitUrl="/contact"
+      csrfHeaderName="X-CSRF-Token"
+    />);
 
     await waitFor(() => {
       expect(screen.getByTestId('first-name')).toBeInTheDocument();
@@ -25,7 +29,11 @@ describe('App', () => {
   it('can retrieve CSRF token from response body', async () => {
     server.use(bodyCsrfResponse.get('token'));
 
-    render(<App url="/contact" csrfFieldName="token" />);
+    render(<App
+      csrfUrl="/csrf"
+      submitUrl="/contact"
+      csrfFieldName="token"
+    />);
 
     await waitFor(() => {
       expect(screen.getByTestId('first-name')).toBeInTheDocument();
@@ -34,12 +42,16 @@ describe('App', () => {
 
   it('displays error message if CSRF token fails', async () => {
     server.use(
-      http.get('/contact', () => {
+      http.get('/csrf', () => {
         return HttpResponse.json(null, { status: 500 });
       }),
     );
 
-    render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
+    render(<App
+      csrfUrl="/csrf"
+      submitUrl="/contact"
+      csrfHeaderName="X-CSRF-Token"
+    />);
 
     await waitFor(() => {
       expect(screen.getByTestId('error-message'))
@@ -48,7 +60,11 @@ describe('App', () => {
   });
 
   it('times out if CSRF token is unavailable', async () => {
-    render(<App url="/unavailable" csrfHeaderName="X-CSRF-Token" />);
+    render(<App
+      csrfUrl="/unavailable"
+      submitUrl="/contact"
+      csrfHeaderName="X-CSRF-Token"
+    />);
 
     await waitFor(() => {
       expect(screen.getByTestId('error-message'))
@@ -58,7 +74,8 @@ describe('App', () => {
 
   it('uses header if csrfHeaderName and csrfFieldName are set', async () => {
     render(<App
-      url="/contact"
+      csrfUrl="/csrf"
+      submitUrl="/contact"
       csrfHeaderName="X-CSRF-Token"
       csrfFieldName="token"
     />);
@@ -68,8 +85,33 @@ describe('App', () => {
     });
   });
 
+  it('throws error if neither header or field name specified', () => {
+    expect(() => render(<App csrfUrl="/csrf" submitUrl="/contact" />))
+      .toThrow('Must provide a value for either csrfHeaderName or ');
+  });
+
+  it('throws error if csrfUrl is not specified', () => {
+    expect(() => render(<App
+      submitUrl="/contact"
+      csrfHeaderName="X-CSRF-Token"
+    />))
+      .toThrow('Must provide a value for csrfUrl');
+  });
+
+  it('throws error if submitUrl is not specified', () => {
+    expect(() => render(<App
+      csrfUrl="/csrf"
+      csrfHeaderName="X-CSRF-Token"
+    />))
+      .toThrow('Must provide a value for submitUrl');
+  });
+
   it('submits form data', async () => {
-    render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
+    render(<App
+      csrfUrl="/csrf"
+      submitUrl="/contact"
+      csrfHeaderName="X-CSRF-Token"
+    />);
 
     await waitFor(() => {
       expect(screen.getByTestId('first-name')).toBeInTheDocument();
@@ -103,12 +145,16 @@ describe('App', () => {
         return HttpResponse.json({
           message: 'Invalid email address'
         }, {
-          status: 500
+          status: 400
         });
       }),
     );
 
-    render(<App url="/contact" csrfHeaderName="X-CSRF-Token" />);
+    render(<App
+      csrfUrl="/csrf"
+      submitUrl="/contact"
+      csrfHeaderName="X-CSRF-Token"
+    />);
 
     await waitFor(() => {
       expect(screen.getByTestId('first-name')).toBeInTheDocument();
@@ -140,7 +186,11 @@ describe('App', () => {
     server.use(bodyCsrfResponse.get('token'));
     server.use(bodyCsrfResponse.post('token'));
 
-    render(<App url="/contact" csrfFieldName="token" />);
+    render(<App
+      csrfUrl="/csrf"
+      submitUrl="/contact"
+      csrfFieldName="token"
+    />);
 
     await waitFor(() => {
       expect(screen.getByTestId('csrf-token')).toHaveValue('randomToken');

@@ -2,20 +2,30 @@ import { useEffect, useState } from 'react'
 import './App.css'
 
 function App({
-  url,
+  csrfUrl,
+  submitUrl,
   csrfHeaderName=null,
   csrfFieldName=null,
 }: {
-  url: String,
+  csrfUrl: String,
+  submitUrl: String,
   csrfHeaderName: String | null,
   csrfFieldName: String | null,
 }) {
 
   if (!csrfHeaderName && !csrfFieldName) {
     throw new Error(
-      'Must provide at value for either csrfHeaderName or csrfFieldName; '
+      'Must provide a value for either csrfHeaderName or csrfFieldName; '
       + 'cannot both be null'
     );
+  }
+
+  if (!csrfUrl) {
+    throw new Error('Must provide a value for csrfUrl');
+  }
+
+  if (!submitUrl) {
+    throw new Error('Must provide a value for submitUrl');
   }
 
   const [csrfToken, setCsrfToken] = useState('');
@@ -36,7 +46,7 @@ function App({
     */
     const retrieveCsrfToken = async () => {
       try {
-        const response = await fetch(url, { credentials: 'same-origin' });
+        const response = await fetch(csrfUrl, { credentials: 'same-origin' });
         if (!response.ok) {
           setError('Unable to load contact form');
           setSpinner(false);
@@ -97,7 +107,7 @@ function App({
           headers[csrfHeaderName] = csrfToken;
         }
       }
-      const response = await fetch(url, {
+      const response = await fetch(submitUrl, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(formData),
