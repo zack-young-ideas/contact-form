@@ -11,7 +11,7 @@ const headerCsrfResponse = {
       'Set-Cookie': 'csrftoken=secret',
     };
     headers[headerName] = 'randomToken';
-    const mock = http.get('/contact', () => {
+    const mock = http.get('/csrf', () => {
       return HttpResponse.json({}, {
         headers: headers,
         status: 200,
@@ -59,7 +59,7 @@ const bodyCsrfResponse = {
   get: (fieldName) => {
     const response = {};
     response[fieldName] = 'randomToken';
-    const mock = http.get('/contact', () => {
+    const mock = http.get('/csrf', () => {
       return HttpResponse.json(response, {
         headers: {
           'Set-Cookie': 'csrftoken=secret',
