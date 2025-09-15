@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import App from './App';
 import { headerCsrfResponse, bodyCsrfResponse } from './mockServer';
@@ -59,7 +59,7 @@ describe('App', () => {
     });
   });
 
-  it('times out if CSRF token is unavailable', async () => {
+  it('displays error message if CSRF token is unavailable', async () => {
     render(<App
       csrfUrl="/unavailable"
       submitUrl="/contact"
@@ -71,6 +71,26 @@ describe('App', () => {
         .toHaveTextContent('Unable to load contact form');
     });
   });
+
+  it('displays error message if CSRF token times out', async () => {
+    server.use(
+      http.get('/csrf', async () => {
+        await delay(9000);
+        return HttpResponse.json(null, { status: 200 });
+      }),
+    );
+
+    render(<App
+      csrfUrl="/csrf"
+      submitUrl="/contact"
+      csrfHeaderName="X-CSRF-Token"
+    />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('error-message'))
+        .toHaveTextContent('Unable to load contact form');
+    }, { timeout: 9000, interval: 100 });
+  }, 9000);
 
   it('uses header if csrfHeaderName and csrfFieldName are set', async () => {
     render(<App
@@ -184,7 +204,7 @@ describe('App', () => {
 
   it('can submit CSRF token in request body', async () => {
     server.use(bodyCsrfResponse.get('token'));
-    server.use(bodyCsrfResponse.post('token'));
+    server.use(bodyCsrfResponse.post());
 
     render(<App
       csrfUrl="/csrf"

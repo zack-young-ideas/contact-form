@@ -7,12 +7,13 @@ function App({
   csrfHeaderName=null,
   csrfFieldName=null,
 }: {
-  csrfUrl: String,
-  submitUrl: String,
-  csrfHeaderName: String | null,
-  csrfFieldName: String | null,
+  csrfUrl: string,
+  submitUrl: string,
+  csrfHeaderName: string | null,
+  csrfFieldName: string | null,
 }) {
 
+  // Validate props values first.
   if (!csrfHeaderName && !csrfFieldName) {
     throw new Error(
       'Must provide a value for either csrfHeaderName or csrfFieldName; '
@@ -45,8 +46,18 @@ function App({
     Retrieves a CSRF token upon loading the contact form.
     */
     const retrieveCsrfToken = async () => {
+      let timeoutId
       try {
-        const response = await fetch(csrfUrl, { credentials: 'same-origin' });
+        const controller = new AbortController();
+        const timeoutDuration = 8000;
+        timeoutId = setTimeout(
+          () =>  controller.abort(),
+          timeoutDuration
+        );
+        const response = await fetch(
+          csrfUrl,
+          { credentials: 'same-origin', signal: controller.signal }
+        );
         if (!response.ok) {
           setError('Unable to load contact form');
           setSpinner(false);
@@ -81,12 +92,17 @@ function App({
       } catch {
         setError('Unable to load contact form');
         setSpinner(false);
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
     retrieveCsrfToken();
-  }, []);
+  }, [csrfUrl, csrfHeaderName, csrfFieldName, csrfToken.length]);
 
   const handleChange = (event) => {
+    /*
+    Called any time the user types anything into the contact form.
+    */
     const { name, value } = event.target;
     setFormData(prevState => ({
       ...prevState,
@@ -95,9 +111,12 @@ function App({
   }
 
   const submitForm = async (event) => {
+    /*
+    Submits the contact form to the server.
+    */
     event.preventDefault();
     try {
-      let headers = {
+      const headers = {
         'Content-Type': 'application/json',
       }
       if (csrfFieldName) {
@@ -123,6 +142,7 @@ function App({
     }
   }
 
+  // Defines error message.
   const errorContent = (
     <p
       data-testid="error-message"
@@ -132,6 +152,7 @@ function App({
     </p>
   );
 
+  // Define hidden form field; only used if csrfFieldName is specified.
   let hiddenFormField = null;
   if (csrfFieldName && !csrfHeaderName) {
     hiddenFormField = (

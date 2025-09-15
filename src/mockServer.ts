@@ -70,7 +70,7 @@ const bodyCsrfResponse = {
     return mock;
   },
 
-  post: (fieldName) => {
+  post: () => {
     const mock = http.post('/contact', async ({ cookies, request }) => {
       const data = await request.json();
       if (!(data.firstName && data.lastName && data.email && data.phone
