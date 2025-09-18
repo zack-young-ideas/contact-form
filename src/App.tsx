@@ -115,7 +115,14 @@ function App({
     Submits the contact form to the server.
     */
     event.preventDefault();
+    let timeoutId
     try {
+      const controller = new AbortController();
+      const timeoutDuration = 8000;
+      timeoutId = setTimeout(
+        () =>  controller.abort(),
+        timeoutDuration
+      );
       const headers = {
         'Content-Type': 'application/json',
       }
@@ -130,15 +137,18 @@ function App({
         method: 'POST',
         headers: headers,
         body: JSON.stringify(formData),
+        signal: controller.signal,
       });
-
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message);
+        setError(data.message);
+      } else {
+        setSuccess(true);
       }
-      setSuccess(true);
-    } catch (error) {
-      setError(error.message);
+    } catch {
+      setError('Unable to connect to server');
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

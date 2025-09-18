@@ -237,4 +237,44 @@ describe('App', () => {
         .toHaveTextContent('Form submitted successfully');
     });
   });
+
+  it('displays error message if contact form times out', async () => {
+    server.use(
+      http.post('/contact', async () => {
+        await delay(9000);
+        return HttpResponse.json(null, { status: 200 });
+      }),
+    );
+
+    render(<App
+      csrfUrl="/csrf"
+      submitUrl="/contact"
+      csrfHeaderName="X-CSRF-Token"
+    />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('first-name')).toBeInTheDocument();
+    });
+
+    const firstNameField = await screen.getByTestId('first-name');
+    const lastNameField = await screen.getByTestId('last-name');
+    const emailField = await screen.getByTestId('email-address');
+    const phoneField = await screen.getByTestId('phone-number');
+    const messageField = await screen.getByTestId('message');
+    const submitButton = await screen.getByRole('button', { name: 'Submit' });
+
+    fireEvent.change(firstNameField, { target: { value: 'John' } });
+    fireEvent.change(lastNameField, { target: { value: 'Smith' } });
+    fireEvent.change(emailField, { target: { value: 'jsmith@example.com' } });
+    fireEvent.change(phoneField, { target: { value: '1234567890' } });
+    fireEvent.change(
+      messageField, { target: { value: 'I would love to hear from you.' } }
+    );
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('error-message'))
+        .toHaveTextContent('Unable to connect to server');
+    }, { timeout: 9000, interval: 100 });
+  }, 9000);
 });
