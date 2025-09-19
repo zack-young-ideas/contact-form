@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import type { ChangeEvent, FormEvent } from 'react';
+import type { RequestHeader, UserData } from './types.ts';
 import './App.css'
 
 function App({
@@ -9,8 +11,8 @@ function App({
 }: {
   csrfUrl: string,
   submitUrl: string,
-  csrfHeaderName: string | null,
-  csrfFieldName: string | null,
+  csrfHeaderName?: string | null,
+  csrfFieldName?: string | null,
 }) {
 
   // Validate props values first.
@@ -31,7 +33,7 @@ function App({
 
   const [csrfToken, setCsrfToken] = useState('');
   const [spinner, setSpinner] = useState(true);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<UserData>({
     firstName: '',
     lastName: '',
     email: '',
@@ -99,7 +101,7 @@ function App({
     retrieveCsrfToken();
   }, [csrfUrl, csrfHeaderName, csrfFieldName, csrfToken.length]);
 
-  const handleChange = (event) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     /*
     Called any time the user types anything into the contact form.
     */
@@ -110,7 +112,7 @@ function App({
     }));
   }
 
-  const submitForm = async (event) => {
+  const submitForm = async (event: FormEvent<HTMLFormElement>) => {
     /*
     Submits the contact form to the server.
     */
@@ -123,7 +125,7 @@ function App({
         () =>  controller.abort(),
         timeoutDuration
       );
-      const headers = {
+      const headers: RequestHeader = {
         'Content-Type': 'application/json',
       }
       if (csrfFieldName) {
